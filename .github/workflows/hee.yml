@@ -20,7 +20,7 @@ jobs:
 
       - name: Generate CSV
         run: |
-          echo "PR_Number,PR_Id,State,PR_Title,PR_url" > pr_data.csv  # Headers added here
+          echo "PR_Number,PR_Id,State,PR_Title,PR_url" > pr3_data.csv  # Headers added here
           echo "${{ steps.fetch-prs.outputs.json }}" | \
           python3 -c "import sys, json; \
           data=json.load(sys.stdin); \
@@ -34,7 +34,7 @@ jobs:
           git pull
           git status
           git add .
-          git commit -m "committed from action"
+          git commit -m "committed from action nngfch"
 
       - name: Push changes to repository
         uses: ad-m/github-push-action@master
