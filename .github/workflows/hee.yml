@@ -1,0 +1,45 @@
+name: Fetch Pull Requests
+
+on:
+  push
+
+jobs:
+  fetch-pull-requests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Fetch Pull Requests
+        id: fetch-prs
+        uses: peter-evans/parse-json@v1
+        with:
+          json: ${{ toJSON( fromJSON( format('https://api.github.com/repos/trainee-org/manju-test/pulls?access_token={0}', secrets.GITHUB_TOKEN) ) ) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate CSV
+        run: |
+          echo "PR_Number,PR_Id,State,PR_Title,PR_url" > pr_data.csv  # Headers added here
+          echo "${{ steps.fetch-prs.outputs.json }}" | \
+          python3 -c "import sys, json; \
+          data=json.load(sys.stdin); \
+          for item in data: \
+              print(f'{item['number']},{item['id']},{item['state']},{item['title']},{item['html_url']}', end='\n')" >> pr_data.csv
+
+      - name: Pull changes from remote repository
+        run: |
+          git config --global user.email "manjushrik@devtools.in"
+          git config --global user.name "manjushrikrishna"
+          git pull
+          git status
+          git add .
+          git commit -m "committed from action"
+
+      - name: Push changes to repository
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          directory: .
