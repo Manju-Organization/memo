@@ -1,45 +1,27 @@
-name: Fetch Pull Requests
-
+name: Get PR ID and Status List
 on:
-  push
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
-  fetch-pull-requests:
+  get-pr-info:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Fetch Pull Requests
-        id: fetch-prs
+      - name: Get PR ID and Status List
+        id: pr-info
         run: |
-          PR_DATA=$(curl -s "https://api.github.com/repos/trainee-org/manju-test/pulls" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}")
-          echo "::set-output name=json::$(echo $PR_DATA)"
+          PR_ID="${{ github.event.pull_request.number }}"
+          PR_STATUS="${{ github.event.pull_request.state }}"
 
-      - name: Generate CSV
-        run: |
-          echo "PR_Number,PR_Id,State,PR_Title,PR_url" > pr3_data.csv  # Headers added here
-          echo "${{ steps.fetch-prs.outputs.json }}" | \
-          python3 -c "import sys, json; \
-          data=json.load(sys.stdin); \
-          for item in data: \
-              print(f'{item['number']},{item['id']},{item['state']},{item['title']},{item['html_url']}', end='\n')" >> pr1_data.csv
+          echo "PR ID,PR Status" > pr_info.csv
+          echo "$PR_ID,$PR_STATUS" >> pr_info.csv
 
-      - name: Pull changes from remote repository
-        run: |
-          git config --global user.email "manjushrik@devtools.in"
-          git config --global user.name "manjushrikrishna"
-          git pull
-          git status
-          git add .
-          git commit -m "committed from action nngfch"
-
-      - name: Push changes to repository
-        uses: ad-m/github-push-action@master
+      - name: Upload PR Info as Artifact
+        uses: actions/upload-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          directory: .
+          name: pr-info
+          path: pr_info.csv
 
